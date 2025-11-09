@@ -4,13 +4,15 @@ const cors = require('cors');
 require('dotenv').config();
 const sequelize = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const onboardingRoutes = require('./routes/onboardingRoutes'); // 👈 NUEVO
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rutas principales
+// Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api', onboardingRoutes); // 👈 NUEVO  (/api/users/:id/onboarding)
 
 // Sincronización con la BD
 sequelize.sync()

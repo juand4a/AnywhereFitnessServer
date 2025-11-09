@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const Usuario = require('../models/Usuario');
+const { use } = require('react');
 
 // 🔹 Registro
 exports.register = async (req, res) => {
@@ -12,16 +13,16 @@ exports.register = async (req, res) => {
   }
 
   try {
-    const { 
-      nombre, 
-      email, 
-      celular, 
-      password, 
-      tipo_plan, 
-      rol, 
-      peso, 
-      altura, 
-      fecha_nacimiento 
+    const {
+      nombre,
+      email,
+      celular,
+      password,
+      tipo_plan,
+      rol,
+      peso,
+      altura,
+      fecha_nacimiento
     } = req.body;
 
     // Comprobar si el usuario ya existe
@@ -98,6 +99,10 @@ exports.login = async (req, res) => {
         celular: user.celular,
         tipo_plan: user.tipo_plan,
         rol: user.rol,
+        peso:user.peso,
+        altura:user.altura,
+        onboarded: !!user.onboarded,  
+
       },
     });
   } catch (error) {
