@@ -5,6 +5,6 @@ const { save, get } = require('../controllers/onboardingController');
 const authMiddleware = require('../middleware/authMiddleware'); // ya existe
 
 router.post('/users/:id/onboarding', authMiddleware, save);
-router.get('/users/:id/onboarding', authMiddleware, get);
+router.get('/users/:id/onboarding',  get);
 
 module.exports = router;
