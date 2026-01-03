@@ -1,59 +1,66 @@
-// models/Usuario.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+module.exports = (sequelize, DataTypes) => {
+  const Usuario = sequelize.define(
+    "Usuario",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      nombre: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      celular: {
+        type: DataTypes.STRING,
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      rol: {
+        type: DataTypes.ENUM("usuario", "entrenador", "admin"),
+        defaultValue: "usuario",
+      },
+      tipo_plan: {
+        type: DataTypes.ENUM("gratuito", "premium"),
+        defaultValue: "gratuito",
+      },
+      peso: DataTypes.DECIMAL(5, 2),
+      altura: DataTypes.DECIMAL(5, 2),
+      fecha_nacimiento: DataTypes.DATEONLY,
+      onboarded: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+    },
+    {
+      tableName: "usuarios",
+      timestamps: false,
+    }
+  );
 
-const Usuario = sequelize.define('Usuario', {
-  id: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  nombre: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  celular: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  tipo_plan: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  rol: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    defaultValue: 'usuario',
-  },
-  altura: {            // si los guardas por registro
-    type: DataTypes.DECIMAL(5,2),
-    allowNull: true,
-  },
-  peso: {            // si los guardas por registro
-    type: DataTypes.DECIMAL(5,2),
-    allowNull: true,
-  },
-  fecha_nacimiento: {
-    type: DataTypes.DATE,
-    allowNull: true,
-  },
-  onboarded: {            // 👈 NUEVO
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false,
-  },
-}, {
-  tableName: 'usuarios',
-  timestamps: false, // tu dump no usa createdAt/updatedAt en usuarios
-});
+  Usuario.associate = (models) => {
+    Usuario.hasOne(models.OnboardingProfile, {
+      foreignKey: "user_id",
+      onDelete: "CASCADE",
+    });
 
-module.exports = Usuario;
+    Usuario.hasMany(models.OnboardingDay, {
+      foreignKey: "user_id",
+      onDelete: "CASCADE",
+    });
+
+    Usuario.hasOne(models.Routine, {
+      foreignKey: "user_id",
+      onDelete: "CASCADE",
+    });
+  };
+
+  return Usuario;
+};

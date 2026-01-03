@@ -1,21 +1,46 @@
-// models/OnboardingProfile.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+module.exports = (sequelize, DataTypes) => {
+  const OnboardingProfile = sequelize.define(
+    "OnboardingProfile",
+    {
+      goal: {
+        type: DataTypes.ENUM(
+          "fuerza",
+          "masa_muscular",
+          "bajar_peso",
+          "resistencia",
+          "salud_general"
+        ),
+        allowNull: false,
+      },
+      experience: {
+        type: DataTypes.ENUM("principiante", "intermedio", "avanzado"),
+        allowNull: false,
+      },
+      location: {
+        type: DataTypes.ENUM("casa", "gimnasio"),
+        allowNull: false,
+      },
+      frequency_per_week: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      injuries: DataTypes.TEXT,
+      notes: DataTypes.TEXT,
+    },
+    {
+      tableName: "onboarding_profiles",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
 
-const OnboardingProfile = sequelize.define('OnboardingProfile', {
-  id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
-  user_id: { type: DataTypes.INTEGER, allowNull: false, unique: true },
-  goal: { type: DataTypes.ENUM('fuerza','masa_muscular','bajar_peso','resistencia','salud_general'), allowNull: false },
-  experience: { type: DataTypes.ENUM('principiante','intermedio','avanzado'), allowNull: false },
-  location: { type: DataTypes.ENUM('casa','gimnasio'), allowNull: false },
-  frequency_per_week: { type: DataTypes.TINYINT.UNSIGNED, allowNull: false },
-  injuries: { type: DataTypes.TEXT, allowNull: true },
-  notes: { type: DataTypes.TEXT, allowNull: true },
-  created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-  updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-}, {
-  tableName: 'onboarding_profiles',
-  timestamps: false,
-});
+  OnboardingProfile.associate = (models) => {
+    OnboardingProfile.belongsTo(models.Usuario, {
+      foreignKey: "user_id",
+      onDelete: "CASCADE",
+    });
+  };
 
-module.exports = OnboardingProfile;
+  return OnboardingProfile;
+};
