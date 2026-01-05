@@ -3,7 +3,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const Usuario = require('../models/Usuario'); // Asegúrate de que esta ruta sea correcta
+const { Usuario } = require('../models');
 
 // 🔹 Registro
 exports.register = async (req, res) => {

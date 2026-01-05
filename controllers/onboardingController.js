@@ -1,8 +1,8 @@
 // controllers/onboardingController.js
 const { Op } = require('sequelize');
-const Usuario = require('../models/Usuario');
-const OnboardingProfile = require('../models/OnboardingProfile');
-const OnboardingDay = require('../models/OnboardingDay');
+const { Usuario } = require('../models');
+const {OnboardingProfile} = require('../models');
+const {OnboardingDay} = require('../models');
 
 exports.save = async (req, res) => {
   const userId = Number(req.params.id);
