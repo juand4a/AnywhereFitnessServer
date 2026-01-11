@@ -56,10 +56,6 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
     });
 
-    Usuario.hasOne(models.Routine, {
-      foreignKey: "user_id",
-      onDelete: "CASCADE",
-    });
   };
 
   return Usuario;
