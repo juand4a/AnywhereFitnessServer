@@ -1,43 +1,41 @@
 module.exports = (sequelize, DataTypes) => {
-    const Exersice = sequelize.define(
-        "Exersice   ",
-        {
-            id: {
-                type: DataTypes.INTEGER,
-                autoIncrement: true,
-                primaryKey: true,
-            },
-            type_id: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            name: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                unique: true,
-            },
-            video_url: {
-                type: DataTypes.STRING,
-            }
+  const Exercise = sequelize.define(
+    "Exercise",
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      type_id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+      },
+      name: {
+        type: DataTypes.STRING(120),
+        allowNull: false,
+        unique: true,
+      },
+      video_url: {
+        type: DataTypes.STRING(500),
+        allowNull: false, // en tu tabla está NOT NULL
+      },
+    },
+    {
+      tableName: "exercises",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      underscored: true,
+    }
+  );
 
-        },
-        {
-            tableName: "exercises",
-            timestamps: true,
-            createdAt: "created_at",
-            updatedAt: "updated_at",
-        }
-    );
+  Exercise.associate = (models) => {
+    Exercise.belongsTo(models.ExerciseType, {
+      foreignKey: "type_id",
+      as: "type",
+    });
+  };
 
-    //   Exersice.associate = (models) => {
-    //     Usuario.hasOne(models.OnboardingProfile, {
-    //       foreignKey: "user_id",
-    //       onDelete: "CASCADE",
-    //     });
-
-
-
-    //   };
-
-    return Exersice;
+  return Exercise;
 };
