@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       type_id: {
         type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: false,
+        allowNull: true,
       },
       name: {
         type: DataTypes.STRING(120),
@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       video_url: {
         type: DataTypes.STRING(500),
-        allowNull: false, // en tu tabla está NOT NULL
+        allowNull: true, // en tu tabla está NOT NULL
       },
     },
     {
@@ -36,6 +36,10 @@ module.exports = (sequelize, DataTypes) => {
       as: "type",
     });
   };
-
+  Exercise.associate = (models) => {
+    Exercise.hasMany(models.WeeklyRoutineExercise, {
+      foreignKey: 'exercise_id',
+    });
+  }
   return Exercise;
 };

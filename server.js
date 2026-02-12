@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const onboardingRoutes = require('./routes/onboardingRoutes'); // 👈 NUEVO
 const userRoutes = require('./routes/userRoutes');
 const exerciseRoutes = require('./routes/exersiceRoutes');
+const weeklyRoutineRoutes = require('./routes/weeklyRoutineRoutes');
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api', onboardingRoutes); // 👈 NUEVO  (/api/users/:id/onboarding)
 app.use('/api/user', userRoutes);
 app.use('/api', exerciseRoutes); 
+app.use('/api', weeklyRoutineRoutes);
+
+
 // Sincronización con la BD
 sequelize.sync()
   .then(() => console.log('✅ Conectado a MySQL y sincronizado'))

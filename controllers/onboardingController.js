@@ -56,3 +56,23 @@ exports.get = async (req, res) => {
     return res.status(500).json({ message: 'Error al obtener onboarding' });
   }
 };
+exports.getOnboardingDaysByUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const days = await OnboardingDay.findAll({
+      where: { user_id: userId },
+      attributes: ['day_code'],
+    });
+
+    return res.status(200).json({
+      days: days.map(d => d.day_code),
+    });
+
+  } catch (error) {
+    console.error('Error al obtener onboarding days:', error);
+    return res.status(500).json({
+      message: 'Error al obtener días de entrenamiento',
+    });
+  }
+};
