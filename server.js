@@ -18,7 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', onboardingRoutes); // 👈 NUEVO  (/api/users/:id/onboarding)
 app.use('/api/user', userRoutes);
 app.use('/api', exerciseRoutes); 
-app.use('/api', weeklyRoutineRoutes);
+app.use('/api/routines', weeklyRoutineRoutes);
 
 
 // Sincronización con la BD

@@ -1,4 +1,4 @@
-const { Exercise } = require('../models');
+const { Exercise,ExerciseType } = require('../models');
 const { Op } = require('sequelize');
 
 exports.createExercise = async (req, res) => {
@@ -19,22 +19,32 @@ exports.createExercise = async (req, res) => {
     res.status(500).json({ message: 'Error al crear ejercicio' });
   }
 };
-exports.searchExercises = async (req, res) => {
-  const { q } = req.query;
+exports.getAllExercises = async (req, res) => {
+  try {
+    const exercises = await Exercise.findAll({
+      include: [{
+        model: ExerciseType,
+        as: 'type', // Asegúrate que en models/Exercise.js la relación diga as: 'type'
+        attributes: ['name']
+      }],
+      attributes: ['id', 'name', 'video_url', 'description'],
+      order: [
+        [{ model: ExerciseType, as: 'type' }, 'id', 'ASC'],
+        ['name', 'ASC']
+      ]
+    });
 
-  if (!q || !q.trim()) {
-    return res.json({ exercises: [] });
+    // Formateamos para que el frontend reciba "category"
+    const result = exercises.map(ex => ({
+      id: ex.id,
+      name: ex.name,
+      category: ex.type ? ex.type.name : 'Otros',
+      video_url: ex.video_url,
+      description: ex.description
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener ejercicios", error: error.message });
   }
-
-  const exercises = await Exercise.findAll({
-    where: {
-      name: {
-        [Op.like]: `%${q}%`,
-      },
-    },
-    attributes: ['id', 'name'],
-    limit: 10,
-  });
-
-  res.json({ exercises });
 };

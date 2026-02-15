@@ -1,207 +1,127 @@
-const {
-  WeeklyRoutine,
-  WeeklyRoutineDay,
-  WeeklyRoutineExercise,
-  OnboardingDay,
-  Exercise,
-  sequelize,
+const { 
+  WeeklyRoutine, 
+  WeeklyRoutineDay, 
+  WeeklyRoutineExercise, 
+  Exercise, 
+  sequelize 
 } = require('../models');
 
-/* =====================================================
-   CREATE / UPDATE WEEKLY ROUTINE
-===================================================== */
-exports.upsertWeeklyRoutine = async (req, res) => {
+/* GET: Obtener rutina formateada para el Front-end */
+exports.getRoutine = async (req, res) => {
   const { userId } = req.params;
-  const { title, days } = req.body;
-
-  const transaction = await sequelize.transaction();
-
-  try {
-    /* ======================
-       1️⃣ ONBOARDING DAYS
-    ====================== */
-    const onboardingDays = await OnboardingDay.findAll({
-      where: { user_id: userId },
-      attributes: ['day_code'],
-      transaction,
-    });
-
-    if (!onboardingDays.length) {
-      await transaction.rollback();
-      return res.status(400).json({
-        message: 'El usuario no tiene onboarding completado',
-      });
-    }
-
-    const allowedDays = onboardingDays.map(d => d.day_code);
-
-    /* ======================
-       2️⃣ VALIDAR DÍAS
-    ====================== */
-    const sentDays = Object.keys(days || {});
-    const invalidDays = sentDays.filter(d => !allowedDays.includes(d));
-
-    if (invalidDays.length > 0) {
-      await transaction.rollback();
-      return res.status(400).json({
-        message: 'Se enviaron días no permitidos según onboarding',
-        invalidDays,
-      });
-    }
-
-    /* ======================
-       3️⃣ BUSCAR / CREAR RUTINA
-    ====================== */
-    let routine = await WeeklyRoutine.findOne({
-      where: { user_id: userId },
-      transaction,
-    });
-
-    const isNew = !routine;
-
-    if (!routine) {
-      routine = await WeeklyRoutine.create(
-        {
-          user_id: userId,
-          title,
-          week_index: 1,
-        },
-        { transaction }
-      );
-    } else {
-      await routine.update({ title }, { transaction });
-
-      // 🔥 BORRADO TOTAL (esto arregla el bug de eliminar ejercicios)
-      await WeeklyRoutineDay.destroy({
-        where: { weekly_routine_id: routine.id },
-        transaction,
-      });
-    }
-
-    /* ======================
-       4️⃣ CREAR DÍAS Y EJERCICIOS
-    ====================== */
-    for (const dayCode of sentDays) {
-      const exercises = Array.isArray(days[dayCode]) ? days[dayCode] : [];
-
-      const routineDay = await WeeklyRoutineDay.create(
-        {
-          weekly_routine_id: routine.id,
-          day_code: dayCode,
-          is_rest_day: exercises.length === 0,
-        },
-        { transaction }
-      );
-
-      for (let i = 0; i < exercises.length; i++) {
-        const ex = exercises[i];
-
-        if (!ex.name || !ex.name.trim()) continue;
-
-        /* 🔑 SIEMPRE resolver Exercise */
-        const [exercise] = await Exercise.findOrCreate({
-          where: { name: ex.name.trim() },
-          defaults: {
-            name: ex.name.trim(),
-            video_url: ex.videoUrl || null,
-          },
-          transaction,
-        });
-
-        await WeeklyRoutineExercise.create(
-          {
-            routine_day_id: routineDay.id,
-            exercise_id: exercise.id, // ✅ NUNCA NULL
-            weight: ex.weight || null,
-            sets: Number(ex.sets) || 0,
-            reps: Number(ex.reps) || 0,
-            rest_seconds: ex.rest ? Number(ex.rest) : null,
-            note: ex.note || null,
-            position: i + 1,
-          },
-          { transaction }
-        );
-      }
-    }
-
-    await transaction.commit();
-
-    return res.status(isNew ? 201 : 200).json({
-      message: isNew
-        ? 'Rutina creada correctamente'
-        : 'Rutina actualizada correctamente',
-    });
-
-  } catch (error) {
-    await transaction.rollback();
-    console.error('Error al guardar rutina:', error);
-
-    return res.status(500).json({
-      message: 'Error al guardar la rutina',
-      error: error.message,
-    });
-  }
-};
-
-/* =====================================================
-   GET WEEKLY ROUTINE BY USER (FORMATO FRONT)
-===================================================== */
-exports.getWeeklyRoutineByUser = async (req, res) => {
-  const { userId } = req.params;
-
   try {
     const routine = await WeeklyRoutine.findOne({
       where: { user_id: userId },
-      include: [
-        {
-          model: WeeklyRoutineDay,
-          include: [
-            {
-              model: WeeklyRoutineExercise,
-              include: [
-                {
-                  model: Exercise,
-                  attributes: ['id', 'name', 'video_url'],
-                },
-              ],
-              order: [['position', 'ASC']],
-            },
-          ],
-        },
-      ],
+      include: [{
+        model: WeeklyRoutineDay,
+        include: [{
+          model: WeeklyRoutineExercise,
+          include: [{ model: Exercise, attributes: ['name', 'video_url'] }]
+        }]
+      }],
+      order: [
+        [WeeklyRoutineDay, 'id', 'ASC'], // O por day_code si prefieres
+        [WeeklyRoutineDay, WeeklyRoutineExercise, 'position', 'ASC']
+      ]
     });
 
-    if (!routine) {
-      return res.status(200).json({ routine: null });
-    }
+    if (!routine) return res.status(200).json({ routine: null });
 
-    /* 🔁 FORMATO EXACTO PARA TU FRONT */
     const days = {};
-
     routine.WeeklyRoutineDays.forEach(day => {
       days[day.day_code] = day.WeeklyRoutineExercises.map(ex => ({
         id: ex.id,
-        name: ex.Exercise?.name ?? 'Ejercicio',
-        weight: ex.weight ?? '',
+        name: ex.Exercise?.name || 'Ejercicio',
+        weight: ex.weight || '',
         sets: ex.sets,
         reps: ex.reps,
         rest: ex.rest_seconds,
         note: ex.note,
-        videoUrl: ex.Exercise?.video_url || null,
+        videoUrl: ex.Exercise?.video_url,
+        position: ex.position
       }));
     });
 
-    return res.status(200).json({
-      id: routine.id,
-      title: routine.title,
-      days,
+    res.status(200).json({ id: routine.id, title: routine.title, sourceType: routine.source_type, days });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener rutina', error: error.message });
+  }
+};
+
+/* UPSERT: Crear o Reemplazar rutina completa */
+exports.upsertRoutine = async (req, res) => {
+  const { userId } = req.params;
+  const { title, days, sourceType } = req.body; 
+  const transaction = await sequelize.transaction();
+
+  try {
+    // 1. Manejar la cabecera de la rutina
+    let [routine, created] = await WeeklyRoutine.findOrCreate({
+      where: { user_id: userId },
+      defaults: { title: title || 'Mi Rutina', source_type: sourceType },
+      transaction
     });
 
+    if (!created) {
+      await routine.update({ title, source_type: sourceType }, { transaction });
+      // LIMPIEZA: Borramos los días existentes para reescribir la nueva estructura
+      await WeeklyRoutineDay.destroy({ where: { weekly_routine_id: routine.id }, transaction });
+    }
+
+    // 2. Insertar Días y sus Ejercicios
+    for (const dayCode of Object.keys(days)) {
+      const exercisesInput = days[dayCode];
+
+      const routineDay = await WeeklyRoutineDay.create({
+        weekly_routine_id: routine.id,
+        day_code: dayCode,
+        is_rest_day: !exercisesInput || exercisesInput.length === 0
+      }, { transaction });
+
+      if (exercisesInput && exercisesInput.length > 0) {
+        const exercisesToBulk = [];
+
+        for (let i = 0; i < exercisesInput.length; i++) {
+          const ex = exercisesInput[i];
+          
+          // Asegurar existencia del ejercicio en catálogo
+          const [exerciseBase] = await Exercise.findOrCreate({
+            where: { name: ex.name.trim() },
+            defaults: { name: ex.name.trim() },
+            transaction
+          });
+
+          exercisesToBulk.push({
+            routine_day_id: routineDay.id,
+            exercise_id: exerciseBase.id,
+            weight: String(ex.weight || ''),
+            sets: parseInt(ex.sets) || 0,
+            reps: String(ex.reps || '0'),
+            rest_seconds: parseInt(ex.rest) || 60,
+            note: ex.note || '',
+            position: i + 1
+          });
+        }
+        await WeeklyRoutineExercise.bulkCreate(exercisesToBulk, { transaction });
+      }
+    }
+
+    await transaction.commit();
+    res.status(200).json({ message: 'Rutina actualizada correctamente', routineId: routine.id });
   } catch (error) {
-    console.error('Error al obtener rutina:', error);
-    return res.status(500).json({
-      message: 'Error al obtener la rutina',
-      error: error.message,
-    });
+    if (transaction) await transaction.rollback();
+    res.status(500).json({ message: 'Error al guardar rutina', error: error.message });
+  }
+};
+
+/* PATCH: Actualizar solo metadatos (por ejemplo, el título) */
+exports.updateMetadata = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { title } = req.body;
+    await WeeklyRoutine.update({ title }, { where: { user_id: userId } });
+    res.status(200).json({ message: 'Título actualizado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

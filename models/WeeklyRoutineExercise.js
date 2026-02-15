@@ -1,51 +1,18 @@
 module.exports = (sequelize, DataTypes) => {
-  const WeeklyRoutineExercise = sequelize.define(
-    'WeeklyRoutineExercise',
-    {
-      id: {
-        type: DataTypes.BIGINT.UNSIGNED,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      routine_day_id: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: false,
-      },
-      exercise_id: {
-        type: DataTypes.INTEGER.UNSIGNED,
-        allowNull: false,
-      },
-      weight: DataTypes.STRING(40),
-      sets: {
-        type: DataTypes.TINYINT.UNSIGNED,
-        allowNull: false,
-      },
-      reps: {
-        type: DataTypes.TINYINT.UNSIGNED,
-        allowNull: false,
-      },
-      rest_seconds: DataTypes.SMALLINT.UNSIGNED,
-      note: DataTypes.STRING(255),
-      position: {
-        type: DataTypes.SMALLINT.UNSIGNED,
-        defaultValue: 1,
-      },
-    },
-    {
-      tableName: 'weekly_routine_exercises',
-      timestamps: true,
-      createdAt: 'created_at',
-      updatedAt: 'updated_at',
-    }
-  );
-WeeklyRoutineExercise.associate = (models) => {
-  WeeklyRoutineExercise.belongsTo(models.Exercise, {
-    foreignKey: 'exercise_id',
+  const WeeklyRoutineExercise = sequelize.define('WeeklyRoutineExercise', {
+    routine_day_id: { type: DataTypes.INTEGER, allowNull: false },
+    exercise_id: { type: DataTypes.INTEGER, allowNull: false },
+    weight: DataTypes.STRING,
+    sets: { type: DataTypes.INTEGER, defaultValue: 0 },
+    reps: DataTypes.STRING,
+    rest_seconds: { type: DataTypes.INTEGER, defaultValue: 60 },
+    note: DataTypes.TEXT,
+    position: { type: DataTypes.INTEGER, defaultValue: 0 }
   });
 
-  WeeklyRoutineExercise.belongsTo(models.WeeklyRoutineDay, {
-    foreignKey: 'routine_day_id',
-  });
-};
+  WeeklyRoutineExercise.associate = (models) => {
+    WeeklyRoutineExercise.belongsTo(models.WeeklyRoutineDay, { foreignKey: 'routine_day_id' });
+    WeeklyRoutineExercise.belongsTo(models.Exercise, { foreignKey: 'exercise_id' });
+  };
   return WeeklyRoutineExercise;
 };

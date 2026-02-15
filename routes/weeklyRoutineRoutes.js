@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 
 const {
-  getWeeklyRoutineByUser,
-  upsertWeeklyRoutine
+  getRoutine,
+  updateMetadata,
+  upsertRoutine
 } = require('../controllers/weeklyRoutineController');
 
-router.get('/routines/user/:userId', getWeeklyRoutineByUser);
-router.put('/routines/user/:userId', upsertWeeklyRoutine);
+router.get('/:userId', getRoutine);
+router.post('/:userId', upsertRoutine);
+router.patch('/:userId/metadata', updateMetadata);
 
 
 module.exports = router;
