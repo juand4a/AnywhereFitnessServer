@@ -91,4 +91,45 @@ exports.logout = (req, res) => {
     // Aquí puedes realizar cualquier limpieza de sesión si es necesario, pero generalmente solo devuelve éxito.
     return res.status(200).json({ message: 'Logout exitoso. El token debe ser descartado por el cliente.' });
 };
+exports.updatePlan = async (req, res) => {
+    try {
+        const { id, tipo_plan } = req.body;
+
+        // 1. Validamos que el ID y el plan estén presentes
+        if (!id || !tipo_plan) {
+            return res.status(400).json({ 
+                message: 'Faltan datos requeridos (ID de usuario o tipo de plan)' 
+            });
+        }
+
+        // 2. Buscamos al usuario
+        const user = await Usuario.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        // 3. Actualizamos el tipo de plan
+        // Nota: Asegúrate de que tu ENUM en el modelo incluya 'pro', 'premium' y 'personalizado'
+        user.tipo_plan = tipo_plan;
+        await user.save();
+
+        console.log(`Plan actualizado: Usuario ${id} ahora es ${tipo_plan}`);
+
+        return res.status(200).json({
+            message: 'Plan actualizado correctamente',
+            user: {
+                id: user.id,
+                nombre: user.nombre,
+                tipo_plan: user.tipo_plan
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al actualizar el plan:', error);
+        res.status(500).json({ 
+            message: 'Error en el servidor al procesar la actualización de plan', 
+            error: error.message 
+        });
+    }
+};
 

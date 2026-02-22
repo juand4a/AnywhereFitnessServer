@@ -14,20 +14,30 @@ exports.getRoutine = async (req, res) => {
       where: { user_id: userId },
       include: [{
         model: WeeklyRoutineDay,
+        as: 'WeeklyRoutineDays', // <--- DEBES usar el alias definido en el modelo
         include: [{
           model: WeeklyRoutineExercise,
-          include: [{ model: Exercise, attributes: ['name', 'video_url'] }]
+          as: 'WeeklyRoutineExercises', // <--- Revisa que en el modelo este sea el alias
+          include: [{ 
+            model: Exercise, 
+            as: 'Exercise', // <--- Asegúrate que el modelo Exercise también tenga alias si lo definiste
+            attributes: ['name', 'video_url'] 
+          }]
         }]
       }],
       order: [
-        [WeeklyRoutineDay, 'id', 'ASC'], // O por day_code si prefieres
-        [WeeklyRoutineDay, WeeklyRoutineExercise, 'position', 'ASC']
+        // Para ordenar con alias se usa la sintaxis de string o el objeto con el alias
+        [{ model: WeeklyRoutineDay, as: 'WeeklyRoutineDays' }, 'id', 'ASC'],
+        [{ model: WeeklyRoutineDay, as: 'WeeklyRoutineDays' }, { model: WeeklyRoutineExercise, as: 'WeeklyRoutineExercises' }, 'position', 'ASC']
       ]
     });
 
     if (!routine) return res.status(200).json({ routine: null });
 
+    // Transformación de los datos para el Frontend
     const days = {};
+    
+    // IMPORTANTE: Aquí usas el alias para acceder a los datos
     routine.WeeklyRoutineDays.forEach(day => {
       days[day.day_code] = day.WeeklyRoutineExercises.map(ex => ({
         id: ex.id,
@@ -42,12 +52,18 @@ exports.getRoutine = async (req, res) => {
       }));
     });
 
-    res.status(200).json({ id: routine.id, title: routine.title, sourceType: routine.source_type, days });
+    res.status(200).json({ 
+      id: routine.id, 
+      title: routine.title, 
+      sourceType: routine.source_type, 
+      days 
+    });
+
   } catch (error) {
+    console.error("DETALLE DEL ERROR:", error);
     res.status(500).json({ message: 'Error al obtener rutina', error: error.message });
   }
 };
-
 /* UPSERT: Crear o Reemplazar rutina completa */
 exports.upsertRoutine = async (req, res) => {
   const { userId } = req.params;
